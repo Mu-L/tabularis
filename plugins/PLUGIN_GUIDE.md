@@ -955,6 +955,76 @@ Execute a SQL query and return results.
 
 ---
 
+#### `explain_query`
+
+Run EXPLAIN or EXPLAIN ANALYZE for a query. Plugins may return either the
+historical parsed plan shape or a raw payload for a parser registered with the
+host.
+
+**Params:**
+
+```json
+{
+  "params": "ConnectionParams",
+  "query": "SELECT * FROM users WHERE id = 42",
+  "analyze": false,
+  "schema": "public"
+}
+```
+
+**Parsed plan result:**
+
+```json
+{
+  "root": {
+    "id": "node-0",
+    "node_type": "Index Scan",
+    "relation": "users",
+    "startup_cost": 0.15,
+    "total_cost": 8.17,
+    "plan_rows": 1,
+    "actual_rows": null,
+    "actual_time_ms": null,
+    "actual_loops": null,
+    "buffers_hit": null,
+    "buffers_read": null,
+    "filter": null,
+    "index_condition": "id = 42",
+    "join_type": null,
+    "hash_condition": null,
+    "extra": {},
+    "children": []
+  },
+  "planning_time_ms": 0.12,
+  "execution_time_ms": null,
+  "original_query": "SELECT * FROM users WHERE id = 42",
+  "driver": "example-db",
+  "has_analyze_data": false,
+  "raw_output": null
+}
+```
+
+**Raw result:**
+
+```json
+{
+  "engine": "example-db",
+  "format": "example-db-plan-text",
+  "payload": "raw plan payload",
+  "original_query": "SELECT * FROM users WHERE id = 42"
+}
+```
+
+The raw shape is detected only when `engine`, `format`, and `payload` are all
+strings. `original_query` may be omitted or `null`; the host then fills it from
+the request. Use a `format` registered by the plugin's EXPLAIN parser bundle.
+A plugin returning the raw shape requires a Tabularis host new enough to
+understand raw plugin output and load that bundle, so set `min_runtime_version`
+to the first compatible host release. Older parsed-plan plugins remain
+supported permanently.
+
+---
+
 ### CRUD Operations
 
 #### `insert_record`
