@@ -3277,6 +3277,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
   const startResize = () => {
     isDragging.current = true;
     document.body.style.cursor = "row-resize";
+    const activeEditor = activeTab ? editorsRef.current[activeTab.id] : undefined;
 
     // Overlay prevents CodeMirror from capturing mouse events during drag
     const overlay = document.createElement("div");
@@ -3306,6 +3307,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
           panels.forEach((el) => {
             el.style.height = `${newHeight}px`;
           });
+          activeEditor?.layout();
         });
       }
     };
@@ -3315,6 +3317,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
       overlay.remove();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setEditorHeight(editorHeightRef.current);
+      requestAnimationFrame(() => activeEditor?.layout());
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
     };
