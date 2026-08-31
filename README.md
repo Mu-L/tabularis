@@ -55,7 +55,7 @@
 
 ```bash
 winget install Debba.Tabularis                                   # Windows
-brew tap TabularisDB/tabularis && brew install --cask tabularis  # macOS
+brew install --cask tabularis  # macOS
 sudo snap install tabularis                                      # Linux
 ```
 
@@ -148,14 +148,6 @@ Follow the on-screen instructions to complete the installation.
 ### macOS
 
 #### Homebrew (Recommended)
-
-To add our tap, run:
-
-```bash
-brew tap TabularisDB/tabularis
-```
-
-Then install:
 
 ```bash
 brew install --cask tabularis
