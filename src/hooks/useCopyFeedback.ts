@@ -6,8 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * `setState` is never called on an unmounted component.
  *
  * @param resetMs  Time in ms before `copied` resets to false (default 2000).
- * @returns `{ copied, copy }` — `copy(text)` writes `text` to the
+ * @returns `{ copied, copy, reset }` — `copy(text)` writes `text` to the
  *          clipboard and flips `copied` to true for `resetMs` ms.
+ *          `reset()` cancels the timer and immediately sets `copied` back to false.
  */
 export function useCopyFeedback(resetMs = 2000) {
   const [copied, setCopied] = useState(false);
@@ -25,7 +26,12 @@ export function useCopyFeedback(resetMs = 2000) {
 
   const copy = useCallback(
     async (text: string) => {
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        console.error("Failed to copy to clipboard:", err);
+        return;
+      }
       clearTimer();
       setCopied(true);
       timerRef.current = setTimeout(() => setCopied(false), resetMs);

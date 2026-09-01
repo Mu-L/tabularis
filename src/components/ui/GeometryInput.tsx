@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Calculator, ChevronDown } from "lucide-react";
 import { isGeometricType } from "../../utils/geometry";
@@ -109,13 +109,13 @@ export const GeometryInput = ({
       : t("geometryInput.wktPlaceholder");
   };
 
-  const sqlFunctions = useMemo(() => [
+  const sqlFunctions = [
     { label: "ST_GeomFromText", template: "ST_GeomFromText('POINT(0 0)', 4326)" },
     { label: "ST_GeomFromText (no SRID)", template: "ST_GeomFromText('POINT(0 0)')" },
     { label: "ST_Point", template: "ST_Point(0, 0)" },
     { label: "ST_MakePoint", template: "ST_MakePoint(0, 0)" },
     { label: "ST_SetSRID", template: "ST_SetSRID(ST_MakePoint(0, 0), 4326)" },
-  ], []);
+  ];
 
   if (!isGeometricType(dataType)) {
     // Fallback to regular input for non-geometric types
