@@ -21,20 +21,21 @@ export function useCopyFeedback(resetMs = 2000) {
     }
   }, []);
 
-  // Cleanup on unmount — prevents setState after unmount.
+  // Cleanup on unmount — cancels any pending reset timer.
   useEffect(() => clearTimer, [clearTimer]);
 
   const copy = useCallback(
     async (text: string) => {
       try {
         await navigator.clipboard.writeText(text);
+        clearTimer();
+        setCopied(true);
+        timerRef.current = setTimeout(() => setCopied(false), resetMs);
       } catch (err) {
         console.error("Failed to copy to clipboard:", err);
-        return;
+        clearTimer();
+        setCopied(false);
       }
-      clearTimer();
-      setCopied(true);
-      timerRef.current = setTimeout(() => setCopied(false), resetMs);
     },
     [clearTimer, resetMs],
   );

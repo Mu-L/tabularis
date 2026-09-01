@@ -117,8 +117,6 @@ export const GeometryInput = ({
       : t("geometryInput.wktPlaceholder");
   };
 
-
-
   if (!isGeometricType(dataType)) {
     // Fallback to regular input for non-geometric types
     return (
