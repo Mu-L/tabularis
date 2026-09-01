@@ -168,7 +168,7 @@ const SubmenuRow = ({
           `}
         >
           {item.submenu.map((sub, i) => {
-            const subKey = sub.separator ? `sub-sep-${i}` : (sub.label ?? `sub-${i}`);
+            const subKey = sub.separator ? `sub-sep-${i}` : (sub.label ? `${sub.label}-${i}` : `sub-${i}`);
             return <MenuRow key={subKey} item={sub} onClose={onClose} />;
           })}
         </div>
@@ -247,7 +247,7 @@ export const ContextMenu = ({ x, y, items, onClose, children, boundaryRight }: C
       className="fixed z-50 min-w-[160px] bg-surface-secondary border border-strong rounded-lg shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100"
     >
       {items.map((item, index) => {
-        const key = item.separator ? `sep-${index}` : (item.label ?? `item-${index}`);
+        const key = item.separator ? `sep-${index}` : (item.label ? `${item.label}-${index}` : `item-${index}`);
         return item.submenu ? (
           <SubmenuRow key={key} item={item} onClose={onClose} openLeft={openSubmenuLeft} />
         ) : (
