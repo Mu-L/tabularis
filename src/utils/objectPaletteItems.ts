@@ -31,6 +31,21 @@ interface ObjectPaletteLabels {
   type: Record<NavigatorItem["type"], string>;
 }
 
+/**
+ * Added to the fuzzy match score (0–100) so that, for comparable matches,
+ * tables rank above views and both rank above routines and triggers. A
+ * PostgreSQL schema with PostGIS installed carries over a thousand functions,
+ * and people open the navigator to switch tables far more often than to open a
+ * function. The boost stays well below an exact-match score, so typing a
+ * routine's full name still puts that routine first.
+ */
+export const OBJECT_TYPE_RELEVANCE: Record<NavigatorItem["type"], number> = {
+  table: 20,
+  view: 10,
+  routine: 0,
+  trigger: 0,
+};
+
 interface CreateObjectPaletteItemsOptions {
   navigatorItems: NavigatorItem[];
   connectionId: string;
@@ -66,6 +81,7 @@ export function createObjectPaletteItems({
       badge: labels.type[item.type],
       keywords: item.schema ? [item.schema] : undefined,
       icon: item.type,
+      relevance: OBJECT_TYPE_RELEVANCE[item.type],
       primaryAction: open,
       actions,
     };

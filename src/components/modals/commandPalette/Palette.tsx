@@ -7,7 +7,10 @@ import type {
   PaletteItem,
 } from "../../../types/palette";
 import { toErrorMessage } from "../../../utils/errors";
-import { createPaletteSearch } from "../../../utils/paletteItems";
+import {
+  createPaletteSearch,
+  MAX_VISIBLE_PALETTE_RESULTS,
+} from "../../../utils/paletteItems";
 import { SpotlightPalette } from "../../ui/SpotlightPalette";
 import { PaletteResults } from "./PaletteResults";
 import { PALETTE_RESULTS_ID, paletteOptionId } from "./paletteIds";
@@ -60,7 +63,11 @@ export const Palette = ({ labels, items, error }: PaletteProps) => {
   );
 
   const search = useMemo(() => createPaletteSearch(items), [items]);
-  const results = useMemo(() => search(query), [search, query]);
+  const matches = useMemo(() => search(query), [search, query]);
+  const results = useMemo(
+    () => matches.slice(0, MAX_VISIBLE_PALETTE_RESULTS),
+    [matches],
+  );
   const activeIndex = Math.min(
     selectedIndex,
     Math.max(results.length - 1, 0),
@@ -108,7 +115,7 @@ export const Palette = ({ labels, items, error }: PaletteProps) => {
       }
       footer={
         <>
-          <span>{labels.getCountLabel?.(results.length)}</span>
+          <span>{labels.getCountLabel?.(matches.length)}</span>
           <div className="flex gap-4">
             <PaletteHint
               keys={["↑", "↓"]}

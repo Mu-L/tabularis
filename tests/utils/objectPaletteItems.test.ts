@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createObjectPaletteItems,
+  OBJECT_TYPE_RELEVANCE,
   type ObjectPaletteRuntime,
 } from "../../src/utils/objectPaletteItems";
 import type { NavigatorItem } from "../../src/utils/quickNavigator";
@@ -157,5 +158,56 @@ describe("createObjectPaletteItems", () => {
 
     expect(runtime.navigateToEditor).toHaveBeenCalled();
     expect(runtime.setActiveTable).not.toHaveBeenCalled();
+  });
+
+  it("should rank tables above views and views above routines and triggers", () => {
+    const navigatorItems: NavigatorItem[] = [
+      {
+        type: "routine",
+        name: "fn",
+        schema: "public",
+        item: { name: "fn", routine_type: "FUNCTION" },
+      },
+      {
+        type: "trigger",
+        name: "trg",
+        schema: "public",
+        item: {
+          name: "trg",
+          table_name: "orders",
+          event: "INSERT",
+          timing: "AFTER",
+        },
+      },
+      {
+        type: "view",
+        name: "v",
+        schema: "public",
+        item: { name: "v" },
+      },
+      {
+        type: "table",
+        name: "t",
+        schema: "public",
+        item: { name: "t" },
+      },
+    ];
+
+    const relevance = Object.fromEntries(
+      createObjectPaletteItems({
+        navigatorItems,
+        connectionId: "connection-a",
+        driver: "postgres",
+        hasGroups: true,
+        isMultiDatabase: false,
+        labels,
+        runtime: createRuntime(),
+      }).map((item) => [item.icon, item.relevance]),
+    );
+
+    expect(relevance).toEqual(OBJECT_TYPE_RELEVANCE);
+    expect(relevance.table).toBeGreaterThan(relevance.view);
+    expect(relevance.view).toBeGreaterThan(relevance.routine);
+    expect(relevance.view).toBeGreaterThan(relevance.trigger);
   });
 });

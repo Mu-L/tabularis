@@ -17,6 +17,7 @@ import type {
   CommandPaletteStateContextType,
 } from "../../../src/contexts/CommandPaletteContext";
 import { CommandPaletteModal } from "../../../src/components/modals/CommandPaletteModal";
+import { MAX_VISIBLE_PALETTE_RESULTS } from "../../../src/utils/paletteItems";
 
 const navigateMock = vi.fn();
 const openEditorMock = vi.fn();
@@ -389,6 +390,39 @@ describe("CommandPaletteModal", () => {
       initialQuery: "SELECT 1",
       targetConnectionId: "connection-1",
     });
+  });
+
+  it("should list tables before routines when the query is empty", () => {
+    connectionData.routines = [
+      { name: "st_union", routine_type: "FUNCTION" },
+    ];
+    connectionData.tables = [{ name: "users" }];
+    renderPalette({ state: { activePalette: "objects" } });
+
+    expect(
+      screen.getAllByRole("option").map((option) =>
+        option.getAttribute("aria-label"),
+      ),
+    ).toEqual(["users", "st_union"]);
+  });
+
+  it("should cap the rendered rows while still counting every match", () => {
+    connectionData.routines = Array.from(
+      { length: MAX_VISIBLE_PALETTE_RESULTS + 50 },
+      (_, index) => ({
+        name: `fn_${index}`,
+        routine_type: "FUNCTION",
+      }),
+    );
+    renderPalette({ state: { activePalette: "objects" } });
+
+    expect(screen.getAllByRole("option")).toHaveLength(
+      MAX_VISIBLE_PALETTE_RESULTS,
+    );
+    expect(screen.getAllByRole("option")[0]).toHaveAttribute(
+      "aria-label",
+      "users",
+    );
   });
 
   it("should render database objects through the same palette", () => {
