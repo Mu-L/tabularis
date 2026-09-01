@@ -36,9 +36,8 @@ export const FilterRow = ({
   const operators = getOperatorsForType(selectedCol?.data_type ?? "");
   const enabled = filter.enabled !== false;
 
-  const noValueOps = NO_VALUE_OPS;
   const isBetween = filter.operator === "BETWEEN";
-  const noValue = noValueOps.includes(filter.operator);
+  const noValue = NO_VALUE_OPS.includes(filter.operator);
 
   const handleColumnChange = (col: string) => {
     const colMeta = columns.find((c) => c.name === col);

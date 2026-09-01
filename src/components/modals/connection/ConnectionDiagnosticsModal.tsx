@@ -61,17 +61,12 @@ export const ConnectionDiagnosticsModal = ({
   );
 
   const copyReport = async () => {
-    const report = formatDiagnosticsReport({
+    await copy(formatDiagnosticsReport({
       summary: title,
       recovery: error?.recoveryKey ? t(error.recoveryKey) : null,
       logLines,
       detail: error?.detail || null,
-    });
-    try {
-      await copy(report);
-    } catch (err) {
-      console.error("Failed to copy diagnostics:", err);
-    }
+    }));
   };
 
   return (
