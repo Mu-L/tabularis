@@ -74,7 +74,7 @@ export function NotebookHistoryPanel({
             const descriptor = descriptorAt(index);
             return (
               <button
-                key={`history-${index}`}
+                key={index}
                 onClick={() => {
                   if (!isCurrent) onJump(index);
                 }}

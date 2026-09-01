@@ -103,7 +103,7 @@ export const ExportProgressModal = ({
               onClick={onClose}
               className="px-4 py-2 bg-surface-tertiary hover:bg-surface-tertiary text-white rounded flex items-center gap-2 transition-colors text-sm font-medium"
             >
-              {t("common.close")}
+              {t("common.close")} {/* Ensure "close" exists in common; if not, use "cancel" or add it */}
             </button>
           )}
         </div>

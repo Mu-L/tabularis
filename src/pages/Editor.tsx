@@ -3864,7 +3864,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
                         const label = statementLabel(q);
                         return (
                         <div
-                          key={`query-${i}-${label}`}
+                          key={i}
                           className="flex items-center border-b border-strong/50 last:border-0 hover:bg-surface-tertiary/50 transition-colors group"
                         >
                           <button

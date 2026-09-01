@@ -303,7 +303,7 @@ export function NotebookView({
       flushSync(() => updateNotebook(newCells));
       cellRefsMap.current
         .get(newCellId)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       focusCell(newCellId);
       return newCellId;
     },
@@ -707,7 +707,7 @@ export function NotebookView({
 
   const scrollToCell = useCallback((cellId: string) => {
     const el = cellRefsMap.current.get(cellId);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   // Keyboard shortcuts (only for the active notebook tab):
@@ -888,7 +888,7 @@ export function NotebookView({
             }}
             onDragOver={handleDragOver(index)}
             onDrop={handleDrop(index)}
-            className="relative"
+            className="relative scroll-mt-4"
           >
             {showLineAt(index) && renderDropLine("top")}
             <NotebookCellWrapper
