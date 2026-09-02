@@ -1348,6 +1348,7 @@ mod tests {
             icon: String::new(),
             settings: Vec::new(),
             ui_extensions: None,
+            explain_parsers: None,
             type_mappings: HashMap::new(),
         }
     }

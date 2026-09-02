@@ -525,6 +525,65 @@ For the full specification, see [`plugin-ui-extensions-spec.md`](https://tabular
 
 ---
 
+## 3c. Plugin-owned EXPLAIN parsers
+
+A plugin that returns the raw `explain_query` shape can ship the matching
+TypeScript parser as an IIFE bundle. Declare each parser in the optional
+`explain_parsers` manifest array:
+
+```json
+{
+  "explain_parsers": [
+    {
+      "engine": "example-db",
+      "format": "example-db-plan-text",
+      "label": "Example DB plan",
+      "module": "explain/dist/index.iife.js"
+    }
+  ]
+}
+```
+
+`engine`, `format`, and `module` are required non-empty strings. `label` is
+optional. The module path is relative to the installed plugin directory and
+must not be absolute or contain `..`.
+
+Build the module as an IIFE named `__tabularis_explain_parser__`, externalize
+`@tabularis/explain` to `__TABULARIS_EXPLAIN__`, and default-export either one
+`RegisteredExplainParser` or an array. The host reads each declared module
+once, matches exports by exact `engine` and `format`, applies the manifest
+label, and calls `registerExplainParser`. For example:
+
+```ts
+import type { RegisteredExplainParser } from "@tabularis/explain";
+import { parseExamplePlan } from "./parser";
+
+const parser: RegisteredExplainParser = {
+  engine: "example-db",
+  format: "example-db-plan-text",
+  label: "Example DB plan",
+  parse: parseExamplePlan,
+  sniff: (payload) => payload.startsWith("EXAMPLE PLAN"),
+};
+
+export default parser;
+```
+
+Use a separate IIFE entry that only exports the descriptor. Do not
+self-register in that entry because the desktop loader performs registration.
+A package entry intended for npm may register itself when imported. Bundle
+read, evaluation, and descriptor failures are isolated per plugin; parser
+exceptions during actual parsing propagate to Visual EXPLAIN's normal error
+handling.
+
+When enabled plugins change, Tabularis removes the formats loaded by the
+previous pass and reloads enabled plugin manifests in sorted plugin-id order.
+This makes disable and re-enable cycles deterministic. The plugin's minimum
+runtime version must be the first Tabularis release that supports both raw
+plugin EXPLAIN output and parser bundles.
+
+---
+
 ## 4. Implementing the JSON-RPC Interface
 
 Your plugin must run an event loop that:

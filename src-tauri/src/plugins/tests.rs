@@ -133,6 +133,34 @@ fn preserves_ui_extension_driver_filter_from_manifest() {
 }
 
 #[test]
+fn preserves_explain_parser_declarations_from_manifest() {
+    let manifest: ConfigManifest = serde_json::from_str(
+        r#"{
+  "id": "explain-plugin",
+  "name": "EXPLAIN Plugin",
+  "version": "1.0.0",
+  "description": "Plugin-owned parser",
+  "explain_parsers": [
+    {
+      "engine": "example-db",
+      "format": "example-db-plan-text",
+      "label": "Example DB plan",
+      "module": "explain/dist/index.iife.js"
+    }
+  ]
+}"#,
+    )
+    .expect("parse manifest");
+
+    let entries = manifest.explain_parsers.expect("explain_parsers present");
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].engine, "example-db");
+    assert_eq!(entries[0].format, "example-db-plan-text");
+    assert_eq!(entries[0].label.as_deref(), Some("Example DB plan"));
+    assert_eq!(entries[0].module, "explain/dist/index.iife.js");
+}
+
+#[test]
 fn returns_error_for_invalid_manifest() {
     let dir = tempdir().expect("temp dir");
     fs::write(dir.path().join(".tabularium"), "{ invalid json").expect("write manifest");
