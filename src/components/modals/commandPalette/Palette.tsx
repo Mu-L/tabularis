@@ -101,6 +101,9 @@ export const Palette = ({ labels, items, error }: PaletteProps) => {
       onClose={closePalette}
       onQueryChange={(nextQuery) => {
         setQuery(nextQuery);
+        // A new query means a new ranking, so the best match is the first
+        // row again rather than wherever the selection sat in the old list.
+        setSelectedIndex(0);
         setExecutionError(null);
       }}
       onSelectedIndexChange={setSelectedIndex}

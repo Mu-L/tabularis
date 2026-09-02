@@ -38,6 +38,7 @@ const connectionData = {
     timing: string;
   }>,
   schemas: [] as string[],
+  selectedSchemas: [] as string[],
   schemaDataMap: {},
   databaseDataMap: {},
   activeSchema: "public",
@@ -176,6 +177,7 @@ describe("CommandPaletteModal", () => {
     connectionData.routines = [];
     connectionData.triggers = [];
     connectionData.schemas = [];
+    connectionData.selectedSchemas = [];
     connectionData.schemaDataMap = {};
   });
 
@@ -285,6 +287,7 @@ describe("CommandPaletteModal", () => {
     connectionData.capabilities = { schemas: true };
     connectionData.tables = [];
     connectionData.schemas = ["public"];
+    connectionData.selectedSchemas = ["public"];
     connectionData.schemaDataMap = {
       public: {
         tables: [{ name: "users" }],
@@ -404,6 +407,73 @@ describe("CommandPaletteModal", () => {
         option.getAttribute("aria-label"),
       ),
     ).toEqual(["users", "st_union"]);
+  });
+
+  it("should move the selection back to the first row when the query changes", () => {
+    connectionData.routines = [
+      { name: "st_union", routine_type: "FUNCTION" },
+      { name: "st_buffer", routine_type: "FUNCTION" },
+    ];
+    renderPalette({ state: { activePalette: "objects" } });
+    const input = screen.getByRole("combobox");
+
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(screen.getAllByRole("option")[2]).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    fireEvent.change(input, { target: { value: "st_" } });
+
+    expect(screen.getAllByRole("option")[0]).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("should list overloaded routines once", () => {
+    connectionData.tables = [];
+    connectionData.routines = [
+      { name: "approx_percentile", routine_type: "FUNCTION" },
+      { name: "approx_percentile", routine_type: "FUNCTION" },
+      { name: "approx_percentile", routine_type: "FUNCTION" },
+    ];
+    renderPalette({ state: { activePalette: "objects" } });
+
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+  });
+
+  it("should only list objects from the schemas selected in the explorer", () => {
+    connectionData.capabilities = { schemas: true };
+    connectionData.tables = [];
+    connectionData.schemas = ["public", "topology"];
+    connectionData.selectedSchemas = ["public"];
+    connectionData.schemaDataMap = {
+      public: {
+        tables: [{ name: "users" }],
+        views: [],
+        routines: [],
+        triggers: [],
+        isLoading: false,
+        isLoaded: true,
+      },
+      topology: {
+        tables: [],
+        views: [],
+        routines: [{ name: "st_union", routine_type: "FUNCTION" }],
+        triggers: [],
+        isLoading: false,
+        isLoaded: true,
+      },
+    };
+    renderPalette({ state: { activePalette: "objects" } });
+
+    expect(
+      screen.getAllByRole("option").map((option) =>
+        option.getAttribute("aria-label"),
+      ),
+    ).toEqual(["users"]);
   });
 
   it("should cap the rendered rows while still counting every match", () => {

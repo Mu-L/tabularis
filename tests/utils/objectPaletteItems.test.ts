@@ -36,6 +36,69 @@ function createRuntime(): ObjectPaletteRuntime {
 }
 
 describe("createObjectPaletteItems", () => {
+  it("should collapse overloaded routines but keep distinct triggers apart", () => {
+    const navigatorItems: NavigatorItem[] = [
+      {
+        type: "routine",
+        name: "approx_percentile",
+        schema: "public",
+        item: { name: "approx_percentile", routine_type: "FUNCTION" },
+      },
+      {
+        type: "routine",
+        name: "approx_percentile",
+        schema: "public",
+        item: { name: "approx_percentile", routine_type: "FUNCTION" },
+      },
+      {
+        type: "routine",
+        name: "approx_percentile",
+        schema: "public",
+        item: { name: "approx_percentile", routine_type: "PROCEDURE" },
+      },
+      {
+        type: "trigger",
+        name: "set_updated_at",
+        schema: "public",
+        item: {
+          name: "set_updated_at",
+          table_name: "users",
+          event: "UPDATE",
+          timing: "BEFORE",
+        },
+      },
+      {
+        type: "trigger",
+        name: "set_updated_at",
+        schema: "public",
+        item: {
+          name: "set_updated_at",
+          table_name: "orders",
+          event: "UPDATE",
+          timing: "BEFORE",
+        },
+      },
+    ];
+
+    const items = createObjectPaletteItems({
+      navigatorItems,
+      connectionId: "connection-a",
+      driver: "postgres",
+      hasGroups: true,
+      isMultiDatabase: false,
+      labels,
+      runtime: createRuntime(),
+    });
+
+    expect(items.map((item) => item.title)).toEqual([
+      "approx_percentile",
+      "approx_percentile",
+      "set_updated_at",
+      "set_updated_at",
+    ]);
+    expect(new Set(items.map((item) => item.id)).size).toBe(4);
+  });
+
   it("should bind table actions to the complete target", async () => {
     const runtime = createRuntime();
     const navigatorItems: NavigatorItem[] = [

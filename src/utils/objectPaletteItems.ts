@@ -65,7 +65,16 @@ export function createObjectPaletteItems({
   labels,
   runtime,
 }: CreateObjectPaletteItemsOptions): PaletteItem[] {
-  return navigatorItems.map((item) => {
+  const seen = new Set<string>();
+
+  return navigatorItems.flatMap((item) => {
+    // Overloaded routines come back once per signature under the same name,
+    // and the definition loader only takes the name, so the extra rows would
+    // open the same thing and collide as React keys.
+    const id = paletteItemId(item);
+    if (seen.has(id)) return [];
+    seen.add(id);
+
     const object = toDatabaseObject(item, {
       connectionId,
       driver,
@@ -74,7 +83,7 @@ export function createObjectPaletteItems({
     const { open, actions } = createActions(object, runtime, labels);
 
     return {
-      id: `${item.type}:${item.schema ?? ""}:${item.name}`,
+      id,
       title: item.name,
       description: item.detail,
       group: hasGroups ? item.schema : undefined,
@@ -86,6 +95,15 @@ export function createObjectPaletteItems({
       actions,
     };
   });
+}
+
+function paletteItemId(item: NavigatorItem): string {
+  const parts = [item.type, item.schema ?? "", item.name];
+  // A function and a procedure may share a name, and a trigger name is only
+  // unique per table.
+  if (item.type === "routine") parts.push(item.item.routine_type);
+  if (item.type === "trigger") parts.push(item.item.table_name);
+  return parts.join(":");
 }
 
 /**
