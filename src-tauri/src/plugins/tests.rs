@@ -5,7 +5,10 @@ use tempfile::tempdir;
 use super::install_cancellation::{begin, cancel, INSTALL_CANCELLED_ERROR};
 use super::installer::{has_manifest, migrate_plugins_between, read_plugin_info_from_dir};
 use super::manager::ConfigManifest;
-use super::runtime_version::check_min_runtime_version;
+use super::runtime_version::{
+    check_min_runtime_version, evaluate_min_runtime_version, push_runtime_warning,
+    take_runtime_warnings, RuntimeVersionVerdict,
+};
 
 #[test]
 fn cancellation_marks_an_active_install() {
@@ -321,4 +324,53 @@ fn runtime_check_ignores_non_semver_values() {
         check_min_runtime_version("p", Some("0.23.0"), "dev"),
         Ok(())
     );
+}
+
+#[test]
+fn runtime_verdict_is_compatible_when_the_floor_is_met() {
+    assert_eq!(
+        evaluate_min_runtime_version("p", Some("0.23.0"), "0.23.0", false),
+        RuntimeVersionVerdict::Compatible
+    );
+    assert_eq!(
+        evaluate_min_runtime_version("p", None, "0.1.0", true),
+        RuntimeVersionVerdict::Compatible
+    );
+}
+
+#[test]
+fn runtime_verdict_refuses_older_release_hosts() {
+    assert_eq!(
+        evaluate_min_runtime_version("sqlserver", Some("0.23.0"), "0.22.0", false),
+        RuntimeVersionVerdict::Incompatible(
+            "Plugin 'sqlserver' requires Tabularis 0.23.0 or newer, but this is Tabularis 0.22.0. Update Tabularis to use this plugin.".to_string()
+        )
+    );
+}
+
+#[test]
+fn runtime_verdict_overrides_in_development_builds_and_says_so() {
+    let verdict = evaluate_min_runtime_version("sqlserver", Some("0.23.0"), "0.22.0", true);
+
+    let RuntimeVersionVerdict::DevOverride(message) = verdict else {
+        panic!("development builds must override, got {verdict:?}");
+    };
+    assert!(message.starts_with("Plugin 'sqlserver' requires Tabularis 0.23.0 or newer"));
+    assert!(message.ends_with("Loaded anyway because this is a development build."));
+}
+
+#[test]
+fn runtime_warnings_are_returned_exactly_once() {
+    push_runtime_warning("queue-test-plugin", "first");
+    push_runtime_warning("queue-test-plugin", "second");
+
+    let drained: Vec<String> = take_runtime_warnings()
+        .into_iter()
+        .filter(|w| w.plugin_id == "queue-test-plugin")
+        .map(|w| w.message)
+        .collect();
+    assert_eq!(drained, vec!["first".to_string(), "second".to_string()]);
+
+    let again = take_runtime_warnings();
+    assert!(again.iter().all(|w| w.plugin_id != "queue-test-plugin"));
 }

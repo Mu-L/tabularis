@@ -374,10 +374,9 @@ pub async fn download_and_install(
     // The marketplace hides incompatible releases, but archives can also be
     // installed by URL or from a local file, so gate the host version here
     // while the bundle is still in the temp dir.
-    if let Err(e) = super::runtime_version::check_min_runtime_version(
+    if let Err(e) = super::runtime_version::enforce_min_runtime_version(
         &manifest_id,
         manifest.min_runtime_version.as_deref(),
-        super::runtime_version::HOST_VERSION,
     ) {
         fs::remove_dir_all(&tmp_dir).ok();
         return Err(e);

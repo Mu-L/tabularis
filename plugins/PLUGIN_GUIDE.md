@@ -583,7 +583,9 @@ runtime version must be the first Tabularis release that supports both raw
 plugin EXPLAIN output and parser bundles. The host enforces
 `min_runtime_version` at install and load time: an older Tabularis refuses the
 plugin with a message naming both versions instead of failing later in Visual
-EXPLAIN.
+EXPLAIN. Development builds of Tabularis load the plugin anyway and show the
+mismatch as a warning toast, so a plugin can be tested against unreleased host
+features.
 
 ---
 
