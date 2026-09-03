@@ -580,7 +580,10 @@ When enabled plugins change, Tabularis removes the formats loaded by the
 previous pass and reloads enabled plugin manifests in sorted plugin-id order.
 This makes disable and re-enable cycles deterministic. The plugin's minimum
 runtime version must be the first Tabularis release that supports both raw
-plugin EXPLAIN output and parser bundles.
+plugin EXPLAIN output and parser bundles. The host enforces
+`min_runtime_version` at install and load time: an older Tabularis refuses the
+plugin with a message naming both versions instead of failing later in Visual
+EXPLAIN.
 
 ---
 

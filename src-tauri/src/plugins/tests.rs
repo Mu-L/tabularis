@@ -5,6 +5,7 @@ use tempfile::tempdir;
 use super::install_cancellation::{begin, cancel, INSTALL_CANCELLED_ERROR};
 use super::installer::{has_manifest, migrate_plugins_between, read_plugin_info_from_dir};
 use super::manager::ConfigManifest;
+use super::runtime_version::check_min_runtime_version;
 
 #[test]
 fn cancellation_marks_an_active_install() {
@@ -222,5 +223,102 @@ fn migration_is_a_no_op_when_legacy_missing() {
     assert!(
         !target.exists(),
         "target not created when nothing to migrate"
+    );
+}
+
+#[test]
+fn preserves_min_runtime_version_from_manifest() {
+    let manifest: ConfigManifest = serde_json::from_str(
+        r#"{
+  "name": "sqlserver",
+  "version": "1.0.0-beta.1",
+  "description": "SQL Server driver",
+  "min_runtime_version": "0.23.0"
+}"#,
+    )
+    .expect("parse manifest");
+
+    assert_eq!(manifest.min_runtime_version.as_deref(), Some("0.23.0"));
+}
+
+#[test]
+fn min_runtime_version_is_optional_in_manifest() {
+    let manifest: ConfigManifest = serde_json::from_str(
+        r#"{
+  "name": "firestore",
+  "version": "0.3.8",
+  "description": "Firestore driver"
+}"#,
+    )
+    .expect("parse manifest");
+
+    assert_eq!(manifest.min_runtime_version, None);
+}
+
+#[test]
+fn runtime_check_accepts_plugins_without_a_floor() {
+    assert_eq!(check_min_runtime_version("p", None, "0.22.0"), Ok(()));
+    assert_eq!(check_min_runtime_version("p", Some(""), "0.22.0"), Ok(()));
+    assert_eq!(
+        check_min_runtime_version("p", Some("   "), "0.22.0"),
+        Ok(())
+    );
+}
+
+#[test]
+fn runtime_check_accepts_equal_or_newer_hosts() {
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23.0"), "0.23.0"),
+        Ok(())
+    );
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23.0"), "0.23.1"),
+        Ok(())
+    );
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23.0"), "1.0.0"),
+        Ok(())
+    );
+    // A nightly built after the release carries the next patch as prerelease.
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23.0"), "0.23.1-3"),
+        Ok(())
+    );
+    assert_eq!(
+        check_min_runtime_version("p", Some("v0.23.0"), "v0.23.0"),
+        Ok(())
+    );
+}
+
+#[test]
+fn runtime_check_refuses_older_hosts_with_both_versions_named() {
+    let error = check_min_runtime_version("sqlserver", Some("0.23.0"), "0.22.0")
+        .expect_err("older host must be refused");
+
+    assert_eq!(
+        error,
+        "Plugin 'sqlserver' requires Tabularis 0.23.0 or newer, but this is Tabularis 0.22.0. Update Tabularis to use this plugin."
+    );
+}
+
+#[test]
+fn runtime_check_treats_prerelease_hosts_as_below_the_release() {
+    assert!(check_min_runtime_version("p", Some("0.23.0"), "0.23.0-nightly.1").is_err());
+    assert!(check_min_runtime_version("p", Some("0.23.0"), "0.22.1-4").is_err());
+}
+
+#[test]
+fn runtime_check_ignores_non_semver_values() {
+    assert_eq!(
+        check_min_runtime_version("p", Some("latest"), "0.22.0"),
+        Ok(())
+    );
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23"), "0.22.0"),
+        Ok(())
+    );
+    assert_eq!(
+        check_min_runtime_version("p", Some("0.23.0"), "dev"),
+        Ok(())
     );
 }

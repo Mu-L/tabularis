@@ -38,6 +38,9 @@ pub struct ConfigManifest {
     /// The registry guarantees `version` in the manifest (`.tabularium`).
     pub version: String,
     pub description: String,
+    /// First Tabularis release this plugin can run on, if it declares one.
+    #[serde(default)]
+    pub min_runtime_version: Option<String>,
     #[serde(default)]
     pub default_port: Option<u16>,
     #[serde(default)]
@@ -174,6 +177,14 @@ pub async fn load_plugin_from_dir(
             plugin_id
         ));
     }
+
+    // Refuse plugins that need host features this build does not have, so the
+    // user sees one clear message instead of a runtime failure later.
+    crate::plugins::runtime_version::check_min_runtime_version(
+        &plugin_id,
+        config.min_runtime_version.as_deref(),
+        crate::plugins::runtime_version::HOST_VERSION,
+    )?;
 
     let manifest = PluginManifest {
         id: plugin_id,
