@@ -213,6 +213,37 @@ describe("pluginExplainLoader", () => {
     );
   });
 
+  it("stops before evaluating a bundle once loading is cancelled", async () => {
+    const pluginManifest = manifest([
+      { engine: "example-db", format: "cancelled-format", module: "explain/cancelled.js" },
+    ]);
+    let cancelled = false;
+    invokeMock.mockImplementation(async () => {
+      // The enabled-plugin set changes while the module read is in flight.
+      cancelled = true;
+      return `var __tabularis_explain_parser__ = ${parserDescriptor("example-db", "cancelled-format")};`;
+    });
+
+    const formats = await loadPluginExplainParsers(pluginManifest, () => !cancelled);
+
+    expect(formats).toEqual([]);
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+    expect(getExplainParser("cancelled-format")).toBeNull();
+  });
+
+  it("registers nothing when cancelled before the first module read", async () => {
+    const pluginManifest = manifest([
+      { engine: "example-db", format: "never-read", module: "explain/never.js" },
+    ]);
+    invokeMock.mockResolvedValue("throw new Error('must not be evaluated');");
+
+    const formats = await loadPluginExplainParsers(pluginManifest, () => false);
+
+    expect(formats).toEqual([]);
+    expect(invokeMock).not.toHaveBeenCalled();
+    expect(getExplainParser("never-read")).toBeNull();
+  });
+
   it("can load again after the previous pass unregisters its formats", async () => {
     const pluginManifest = manifest([
       { engine: "example-db", format: "repeat-format", module: "explain/repeat.js" },
